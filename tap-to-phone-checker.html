@@ -895,6 +895,11 @@
             onLine: navigator.onLine,
             webNFC: 'NDEFReader' in window
         });
+
+        if (navigator.userAgentData) {
+            navigator.userAgentData.getHighEntropyValues(['platformVersion'])
+                .then(data => console.log('Actual platform version:', data.platformVersion));
+        }
     </script>
 </body>
 </html> 
