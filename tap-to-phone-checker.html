@@ -559,11 +559,19 @@
                 const userAgent = navigator.userAgent;
                 
                 if (userAgent.includes('Android')) {
-                    // Try to extract Android version
-                    const androidMatch = userAgent.match(/Android (\d+\.?\d*)/);
-                    if (androidMatch) {
-                        const version = parseFloat(androidMatch[1]);
-                        if (version >= 11) {
+                    // Enhanced Android version detection with multiple patterns
+                    const version = this.extractAndroidVersion(userAgent);
+                    
+                    // Log for debugging
+                    console.log('Android version detection:', {
+                        userAgent: userAgent,
+                        extractedVersion: version,
+                        versionNumber: version ? parseFloat(version) : null
+                    });
+                    
+                    if (version) {
+                        const versionNumber = parseFloat(version);
+                        if (versionNumber >= 11) {
                             this.results.android = true;
                             this.updateTimelineItem(resultElement, 'completed', '✅', 'Android 11+', `Android ${version} detected`);
                         } else {
@@ -572,12 +580,41 @@
                         }
                     } else {
                         this.results.android = 'unknown';
-                        this.updateTimelineItem(resultElement, 'partial', '⚠️', 'Android Version Unknown', 'Could not determine Android version');
+                        this.updateTimelineItem(resultElement, 'partial', '⚠️', 'Android Version Unknown', 'Could not determine Android version from user agent');
                     }
                 } else {
                     this.results.android = false;
                     this.updateTimelineItem(resultElement, 'failed', '❌', 'Not Android', 'Tap to Phone requires Android OS');
                 }
+            }
+            
+            extractAndroidVersion(userAgent) {
+                // Multiple patterns to catch different user agent formats
+                const patterns = [
+                    /Android (\d+(?:\.\d+)*)/i,           // Standard: "Android 12" or "Android 12.1"
+                    /Android\/(\d+(?:\.\d+)*)/i,          // Alternative: "Android/12"
+                    /Android;.*?(\d+(?:\.\d+)*)/i,        // Fallback: "Android; ... 12"
+                    /; Android (\d+(?:\.\d+)*)[;\)]/i     // Specific: "; Android 12;"
+                ];
+                
+                for (const pattern of patterns) {
+                    const match = userAgent.match(pattern);
+                    if (match && match[1]) {
+                        return match[1];
+                    }
+                }
+                
+                // Last resort: look for any number after "Android"
+                const fallbackMatch = userAgent.match(/Android[^\d]*(\d+)/i);
+                if (fallbackMatch && fallbackMatch[1]) {
+                    const potentialVersion = parseInt(fallbackMatch[1]);
+                    // Only accept reasonable Android versions (4-15 range)
+                    if (potentialVersion >= 4 && potentialVersion <= 15) {
+                        return potentialVersion.toString();
+                    }
+                }
+                
+                return null;
             }
 
             async checkGMS() {
