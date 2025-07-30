@@ -305,6 +305,8 @@
             font-size: 14px;
             color: var(--color-content-dim);
             line-height: 1.4;
+            word-break: break-word;
+            overflow-wrap: break-word;
         }
 
         .overall-result {
@@ -571,16 +573,22 @@
                     
                     if (version) {
                         const versionNumber = parseFloat(version);
+                        const userAgentSnippet = this.getUserAgentSnippet(userAgent);
+                        
                         if (versionNumber >= 11) {
                             this.results.android = true;
-                            this.updateTimelineItem(resultElement, 'completed', '✅', 'Android 11+', `Android ${version} detected`);
+                            this.updateTimelineItem(resultElement, 'completed', '✅', 'Android 11+', 
+                                `Android ${version} detected. User Agent: ${userAgentSnippet}`);
                         } else {
                             this.results.android = false;
-                            this.updateTimelineItem(resultElement, 'failed', '❌', 'Android Version Too Old', `Android ${version} - requires Android 11+`);
+                            this.updateTimelineItem(resultElement, 'failed', '❌', 'Android Version Too Old', 
+                                `Android ${version} - requires Android 11+. User Agent: ${userAgentSnippet}`);
                         }
                     } else {
+                        const userAgentSnippet = this.getUserAgentSnippet(userAgent);
                         this.results.android = 'unknown';
-                        this.updateTimelineItem(resultElement, 'partial', '⚠️', 'Android Version Unknown', 'Could not determine Android version from user agent');
+                        this.updateTimelineItem(resultElement, 'partial', '⚠️', 'Android Version Unknown', 
+                            `Could not determine Android version. User Agent: ${userAgentSnippet}`);
                     }
                 } else {
                     this.results.android = false;
@@ -615,6 +623,25 @@
                 }
                 
                 return null;
+            }
+            
+            getUserAgentSnippet(userAgent) {
+                // Extract the most relevant parts for Android detection
+                const androidMatch = userAgent.match(/(Android[^;)]*)/i);
+                if (androidMatch) {
+                    // Show the Android part and limit length
+                    let snippet = androidMatch[1];
+                    if (snippet.length > 50) {
+                        snippet = snippet.substring(0, 47) + '...';
+                    }
+                    return snippet;
+                }
+                
+                // Fallback: show first part of user agent
+                if (userAgent.length > 60) {
+                    return userAgent.substring(0, 57) + '...';
+                }
+                return userAgent;
             }
 
             async checkGMS() {
