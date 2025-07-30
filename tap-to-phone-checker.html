@@ -626,21 +626,7 @@
             }
             
             getUserAgentSnippet(userAgent) {
-                // Extract the most relevant parts for Android detection
-                const androidMatch = userAgent.match(/(Android[^;)]*)/i);
-                if (androidMatch) {
-                    // Show the Android part and limit length
-                    let snippet = androidMatch[1];
-                    if (snippet.length > 50) {
-                        snippet = snippet.substring(0, 47) + '...';
-                    }
-                    return snippet;
-                }
-                
-                // Fallback: show first part of user agent
-                if (userAgent.length > 60) {
-                    return userAgent.substring(0, 57) + '...';
-                }
+                // Return the complete, original user agent string for debugging
                 return userAgent;
             }
 
