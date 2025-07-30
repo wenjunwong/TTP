@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tap to Phone Compatibility Checker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Duxton Light Theme Design Tokens */
+            --color-brand-primary-default: #00b14f;
+            --color-brand-primary-bold: #00804a;
+            --color-brand-primary-soft: #b1eaba;
+            --color-brand-primary-softest: #d9fcde;
+            --color-brand-secondary-default: #17b5a6;
+            --color-brand-secondary-soft: #a9eae6;
+            
+            --color-background-default: #ffffff;
+            --color-background-alt: #f5f5f5;
+            --color-background-surface-level-1: #ffffff;
+            --color-background-surface-level-2: #ffffff;
+            
+            --color-content-default: #1a1a1a;
+            --color-content-subtle: #3d3d3d;
+            --color-content-dim: #707070;
+            --color-content-placeholder: #a3a3a3;
+            --color-content-on-brand-default: #ffffff;
+            
+            --color-status-positive-default: #00b14f;
+            --color-status-positive-soft: #b1eaba;
+            --color-status-positive-softest: #d9fcde;
+            --color-status-alert-default: #d42e1c;
+            --color-status-alert-soft: #ffd2cc;
+            --color-status-alert-softest: #fdf2f2;
+            --color-status-notice-default: #f09800;
+            --color-status-notice-soft: #ffd933;
+            --color-status-notice-softest: #fff9c0;
+            --color-status-neutral-default: #707070;
+            --color-status-neutral-soft: #dbdbdb;
+            --color-status-neutral-softest: #f5f5f5;
+            
+            --color-outline-default: #bfbfbf;
+            --color-outline-soft: #dbdbdb;
+            --color-outline-bold: #a3a3a3;
+            
+            --font-family: "Inter", "Inter Variable", sans-serif;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--color-background-default);
+            color: var(--color-content-default);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 24px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--color-content-default);
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 16px;
+            color: var(--color-content-dim);
+        }
+
+        .checker-card {
+            background: var(--color-background-surface-level-1);
+            border: 1px solid var(--color-outline-soft);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(26, 26, 26, 0.08);
+        }
+
+        .check-button {
+            width: 100%;
+            background: var(--color-brand-primary-default);
+            color: var(--color-content-on-brand-default);
+            border: none;
+            border-radius: 8px;
+            padding: 16px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 32px;
+        }
+
+        .check-button:hover {
+            background: var(--color-brand-primary-bold);
+            transform: translateY(-1px);
+        }
+
+        .check-button:active {
+            transform: translateY(0);
+        }
+
+        .check-button:disabled {
+            background: var(--color-status-neutral-soft);
+            color: var(--color-content-dim);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: var(--color-content-dim);
+            margin-bottom: 32px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--color-outline-soft);
+            border-radius: 50%;
+            border-top-color: var(--color-brand-primary-default);
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .results {
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+        }
+
+        /* Timeline/Progress Tracker Styles */
+        .timeline-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .timeline-header h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--color-content-default);
+            margin-bottom: 8px;
+        }
+
+        .timeline-header p {
+            font-size: 14px;
+            color: var(--color-content-dim);
+        }
+
+        .timeline-container {
+            position: relative;
+            padding-left: 0;
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-left: 60px;
+            margin-bottom: 24px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+        }
+
+        .timeline-item:not(:last-child)::before {
+            content: '';
+            position: absolute;
+            left: 24px;
+            top: 50px;
+            width: 2px;
+            height: 40px;
+            background: var(--color-outline-soft);
+            z-index: 1;
+        }
+
+        .timeline-item.completed:not(:last-child)::before {
+            background: var(--color-status-positive-default);
+        }
+
+        .timeline-item.partial:not(:last-child)::before {
+            background: var(--color-status-notice-default);
+        }
+
+        .timeline-item.failed:not(:last-child)::before {
+            background: var(--color-status-alert-default);
+        }
+
+        .timeline-icon {
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 600;
+            z-index: 2;
+            transition: all 0.3s ease;
+            border: 3px solid var(--color-background-default);
+            box-shadow: 0 2px 8px rgba(26, 26, 26, 0.1);
+        }
+
+        .timeline-icon.pending {
+            background: var(--color-status-neutral-soft);
+            color: var(--color-content-dim);
+        }
+
+        .timeline-icon.checking {
+            background: var(--color-brand-primary-default);
+            color: var(--color-content-on-brand-default);
+            animation: pulse 2s infinite;
+        }
+
+        .timeline-icon.completed {
+            background: var(--color-status-positive-default);
+            color: var(--color-content-on-brand-default);
+        }
+
+        .timeline-icon.partial {
+            background: var(--color-status-notice-default);
+            color: var(--color-content-on-brand-default);
+        }
+
+        .timeline-icon.failed {
+            background: var(--color-status-alert-default);
+            color: var(--color-content-on-brand-default);
+        }
+
+        @keyframes pulse {
+            0% { transform: translateY(-50%) scale(1); }
+            50% { transform: translateY(-50%) scale(1.05); }
+            100% { transform: translateY(-50%) scale(1); }
+        }
+
+        .timeline-content {
+            flex: 1;
+            padding: 16px 20px;
+            border-radius: 12px;
+            background: var(--color-background-surface-level-1);
+            border: 1px solid var(--color-outline-soft);
+            transition: all 0.3s ease;
+        }
+
+        .timeline-content.completed {
+            background: var(--color-status-positive-softest);
+            border-color: var(--color-status-positive-soft);
+        }
+
+        .timeline-content.partial {
+            background: var(--color-status-notice-softest);
+            border-color: var(--color-status-notice-soft);
+        }
+
+        .timeline-content.failed {
+            background: var(--color-status-alert-softest);
+            border-color: var(--color-status-alert-soft);
+        }
+
+        .timeline-title {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 4px;
+            color: var(--color-content-default);
+        }
+
+        .timeline-description {
+            font-size: 14px;
+            color: var(--color-content-dim);
+            line-height: 1.4;
+        }
+
+        .overall-result {
+            text-align: center;
+            padding: 24px;
+            border-radius: 16px;
+            margin-top: 32px;
+            font-weight: 600;
+            font-size: 18px;
+            position: relative;
+        }
+
+        .overall-result::before {
+            content: '';
+            position: absolute;
+            top: -16px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid var(--color-background-default);
+            box-shadow: 0 2px 8px rgba(26, 26, 26, 0.1);
+        }
+
+        .overall-result.compatible {
+            background: var(--color-status-positive-softest);
+            color: var(--color-brand-primary-bold);
+            border: 2px solid var(--color-status-positive-soft);
+        }
+
+        .overall-result.compatible::before {
+            background: var(--color-status-positive-default);
+            content: '🎉';
+        }
+
+        .overall-result.incompatible {
+            background: var(--color-status-alert-softest);
+            color: var(--color-status-alert-default);
+            border: 2px solid var(--color-status-alert-soft);
+        }
+
+        .overall-result.incompatible::before {
+            background: var(--color-status-alert-default);
+            content: '❌';
+        }
+
+        .overall-result.partial {
+            background: var(--color-status-notice-softest);
+            color: var(--color-status-notice-default);
+            border: 2px solid var(--color-status-notice-soft);
+        }
+
+        .overall-result.partial::before {
+            background: var(--color-status-notice-default);
+            content: '⚠️';
+        }
+
+        /* Connection line from last timeline item to overall result */
+        .timeline-container::after {
+            content: '';
+            position: absolute;
+            left: 24px;
+            bottom: -32px;
+            width: 2px;
+            height: 48px;
+            background: var(--color-outline-soft);
+            z-index: 1;
+        }
+
+        .timeline-container.completed::after {
+            background: var(--color-status-positive-default);
+        }
+
+        .timeline-container.partial::after {
+            background: var(--color-status-notice-default);
+        }
+
+        .timeline-container.failed::after {
+            background: var(--color-status-alert-default);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid var(--color-outline-soft);
+            color: var(--color-content-dim);
+            font-size: 14px;
+        }
+
+        .retry-button {
+            background: transparent;
+            color: var(--color-brand-primary-default);
+            border: 1px solid var(--color-brand-primary-default);
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 16px;
+        }
+
+        .retry-button:hover {
+            background: var(--color-brand-primary-softest);
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 16px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Tap to Phone Checker</h1>
+            <p>Check if your device supports Tap to Phone functionality</p>
+        </div>
+
+        <div class="checker-card">
+            <button id="checkButton" class="check-button">
+                Start Compatibility Check
+            </button>
+
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+                Checking device compatibility...
+            </div>
+
+            <div id="results" class="results">
+                <div class="timeline-header">
+                    <h3>Compatibility Check Progress</h3>
+                    <p>Verifying your device meets all requirements</p>
+                </div>
+
+                <div class="timeline-container">
+                    <div id="nfcResult" class="timeline-item">
+                        <div class="timeline-icon pending">📱</div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">NFC Support</div>
+                            <div class="timeline-description">Checking if device has NFC reader...</div>
+                        </div>
+                    </div>
+
+                    <div id="androidResult" class="timeline-item">
+                        <div class="timeline-icon pending">🤖</div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">Android Version</div>
+                            <div class="timeline-description">Checking Android OS version...</div>
+                        </div>
+                    </div>
+
+                    <div id="gmsResult" class="timeline-item">
+                        <div class="timeline-icon pending">🔐</div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">GMS Certification</div>
+                            <div class="timeline-description">Checking Google Mobile Services...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="overallResult" class="overall-result">
+                    <div id="overallResultText">Checking compatibility...</div>
+                </div>
+
+                <button id="retryButton" class="retry-button" style="display: none;">
+                    Check Again
+                </button>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Tap to Phone requires NFC, Android 11+, and GMS certification</p>
+        </div>
+    </div>
+
+    <script>
+        class TapToPhoneChecker {
+            constructor() {
+                this.results = {
+                    nfc: null,
+                    android: null,
+                    gms: null
+                };
+                
+                this.bindEvents();
+            }
+
+            bindEvents() {
+                document.getElementById('checkButton').addEventListener('click', () => this.startCheck());
+                document.getElementById('retryButton').addEventListener('click', () => this.startCheck());
+            }
+
+            async startCheck() {
+                // Reset UI
+                this.showLoading();
+                this.resetResults();
+                
+                // Simulate checking delay for better UX
+                await this.delay(500);
+                
+                this.hideLoading();
+                this.showResults();
+                
+                // Run checks sequentially for better visual flow
+                await this.checkNFC();
+                await this.delay(200); // Small delay between checks
+                await this.checkAndroidVersion();
+                await this.delay(200);
+                await this.checkGMS();
+                
+                // Small delay before showing overall result
+                await this.delay(300);
+                this.updateOverallResult();
+            }
+
+            async checkNFC() {
+                const resultElement = document.getElementById('nfcResult');
+                this.setCheckingState(resultElement);
+                
+                await this.delay(800);
+                
+                if ('NDEFReader' in window) {
+                    // Web NFC is supported
+                    this.results.nfc = true;
+                    this.updateTimelineItem(resultElement, 'completed', '✅', 'NFC Supported', 'Web NFC API is available');
+                } else if (navigator.userAgent.includes('Android')) {
+                    // Android device but no Web NFC - likely has NFC hardware
+                    this.results.nfc = 'likely';
+                    this.updateTimelineItem(resultElement, 'partial', '⚠️', 'NFC Likely Available', 'Android device detected - NFC hardware likely present');
+                } else {
+                    // Not supported or not Android
+                    this.results.nfc = false;
+                    this.updateTimelineItem(resultElement, 'failed', '❌', 'NFC Not Detected', 'No NFC support detected');
+                }
+            }
+
+            async checkAndroidVersion() {
+                const resultElement = document.getElementById('androidResult');
+                this.setCheckingState(resultElement);
+                
+                await this.delay(1000);
+                
+                const userAgent = navigator.userAgent;
+                
+                if (userAgent.includes('Android')) {
+                    // Try to extract Android version
+                    const androidMatch = userAgent.match(/Android (\d+\.?\d*)/);
+                    if (androidMatch) {
+                        const version = parseFloat(androidMatch[1]);
+                        if (version >= 11) {
+                            this.results.android = true;
+                            this.updateTimelineItem(resultElement, 'completed', '✅', 'Android 11+', `Android ${version} detected`);
+                        } else {
+                            this.results.android = false;
+                            this.updateTimelineItem(resultElement, 'failed', '❌', 'Android Version Too Old', `Android ${version} - requires Android 11+`);
+                        }
+                    } else {
+                        this.results.android = 'unknown';
+                        this.updateTimelineItem(resultElement, 'partial', '⚠️', 'Android Version Unknown', 'Could not determine Android version');
+                    }
+                } else {
+                    this.results.android = false;
+                    this.updateTimelineItem(resultElement, 'failed', '❌', 'Not Android', 'Tap to Phone requires Android OS');
+                }
+            }
+
+            async checkGMS() {
+                const resultElement = document.getElementById('gmsResult');
+                this.setCheckingState(resultElement);
+                
+                await this.delay(800);
+                
+                try {
+                    // Use the enhanced async GMS detection
+                    const hasGMS = await this.detectGMS();
+                    
+                    if (hasGMS === true) {
+                        this.results.gms = true;
+                        this.updateTimelineItem(resultElement, 'completed', '✅', 'GMS Certified', 'Google Mobile Services verified through API checks');
+                    } else if (hasGMS === 'likely') {
+                        this.results.gms = 'likely';
+                        this.updateTimelineItem(resultElement, 'partial', '⚠️', 'GMS Likely Present', 'Strong indicators suggest GMS is available');
+                    } else {
+                        this.results.gms = false;
+                        this.updateTimelineItem(resultElement, 'failed', '❌', 'GMS Not Detected', 'Could not verify Google Mobile Services');
+                    }
+                } catch (error) {
+                    console.warn('GMS detection error:', error);
+                    this.results.gms = 'unknown';
+                    this.updateTimelineItem(resultElement, 'partial', '⚠️', 'GMS Check Failed', 'Unable to complete GMS verification');
+                }
+            }
+
+            async detectGMS() {
+                const userAgent = navigator.userAgent;
+                
+                // Early return if not Android
+                if (!userAgent.includes('Android')) {
+                    return false;
+                }
+                
+                // Check for definitive non-GMS indicators first
+                const nonGmsIndicators = [
+                    'HarmonyOS', // Huawei's OS
+                    'EMUI', // Huawei's skin without GMS
+                    'LineageOS', // Custom ROM
+                    'CyanogenMod', // Custom ROM
+                ];
+                
+                for (const indicator of nonGmsIndicators) {
+                    if (userAgent.includes(indicator)) {
+                        return false;
+                    }
+                }
+                
+                // Test for Google Services APIs availability
+                try {
+                    // Check if we can access Google APIs
+                    const gmsChecks = await Promise.allSettled([
+                        this.checkGoogleAPI('https://www.googleapis.com/discovery/v1/apis'),
+                        this.checkGoogleAPI('https://accounts.google.com/.well-known/openid_configuration'),
+                        this.checkWebViewGMS()
+                    ]);
+                    
+                    const successfulChecks = gmsChecks.filter(check => check.status === 'fulfilled').length;
+                    
+                    if (successfulChecks >= 2) {
+                        return true;
+                    } else if (successfulChecks >= 1) {
+                        return 'likely';
+                    }
+                } catch (error) {
+                    // If API checks fail, fall back to heuristics
+                }
+                
+                // Enhanced heuristic checks
+                return this.fallbackGMSDetection(userAgent);
+            }
+            
+            async checkGoogleAPI(url) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 3000);
+                    
+                    const response = await fetch(url, {
+                        method: 'HEAD',
+                        mode: 'no-cors',
+                        signal: controller.signal
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    return true;
+                } catch (error) {
+                    return false;
+                }
+            }
+            
+            checkWebViewGMS() {
+                return new Promise((resolve) => {
+                    const userAgent = navigator.userAgent;
+                    
+                    // Check if running in a WebView with GMS
+                    const isWebView = userAgent.includes('wv') || userAgent.includes('Version/');
+                    const hasChrome = userAgent.includes('Chrome/');
+                    
+                    if (isWebView && hasChrome) {
+                        // In a modern WebView with Chrome engine - likely has GMS
+                        resolve(true);
+                    } else if (hasChrome && userAgent.includes('Mobile')) {
+                        // Mobile Chrome browser - strong GMS indicator
+                        resolve(true);
+                    } else {
+                        resolve(false);
+                    }
+                });
+            }
+            
+            fallbackGMSDetection(userAgent) {
+                // Enhanced heuristic checks as fallback
+                
+                // Strong positive indicators
+                if (userAgent.includes('Chrome/') && userAgent.includes('Mobile')) {
+                    // Chrome Mobile is a strong indicator of GMS
+                    return true;
+                }
+                
+                // Check for common GMS device patterns
+                const gmsDevicePatterns = [
+                    /SM-[A-Z]\d+/, // Samsung Galaxy series
+                    /Pixel/, // Google Pixel
+                    /LG-/, // LG devices
+                    /HTC/, // HTC devices
+                    /Sony/, // Sony devices
+                    /Motorola/, // Motorola devices
+                    /OnePlus/, // OnePlus devices
+                ];
+                
+                for (const pattern of gmsDevicePatterns) {
+                    if (pattern.test(userAgent)) {
+                        return 'likely';
+                    }
+                }
+                
+                // Check for Webkit and Chrome combination
+                if (userAgent.includes('WebKit') && userAgent.includes('Chrome')) {
+                    return 'likely';
+                }
+                
+                // If we get here and it's Android, it's uncertain
+                return false;
+            }
+
+            setCheckingState(element) {
+                const icon = element.querySelector('.timeline-icon');
+                const content = element.querySelector('.timeline-content');
+                
+                icon.className = 'timeline-icon checking';
+                icon.textContent = '⏳';
+                content.className = 'timeline-content';
+                element.classList.add('checking');
+            }
+
+            updateTimelineItem(element, status, icon, title, description) {
+                const timelineIcon = element.querySelector('.timeline-icon');
+                const timelineContent = element.querySelector('.timeline-content');
+                const timelineTitle = element.querySelector('.timeline-title');
+                const timelineDescription = element.querySelector('.timeline-description');
+                
+                // Update icon
+                timelineIcon.className = `timeline-icon ${status}`;
+                timelineIcon.textContent = icon;
+                
+                // Update content
+                timelineContent.className = `timeline-content ${status}`;
+                timelineTitle.textContent = title;
+                timelineDescription.textContent = description;
+                
+                // Update timeline item
+                element.classList.remove('checking');
+                element.classList.add(status);
+            }
+
+            updateOverallResult() {
+                const overallElement = document.getElementById('overallResult');
+                const textElement = document.getElementById('overallResultText');
+                const retryButton = document.getElementById('retryButton');
+                const timelineContainer = document.querySelector('.timeline-container');
+                
+                const { nfc, android, gms } = this.results;
+                
+                // Count compatible results
+                const compatibleCount = [nfc, android, gms].filter(result => result === true).length;
+                const likelyCount = [nfc, android, gms].filter(result => result === 'likely').length;
+                const totalPositive = compatibleCount + likelyCount;
+                
+                if (compatibleCount === 3) {
+                    overallElement.className = 'overall-result compatible';
+                    timelineContainer.className = 'timeline-container completed';
+                    textElement.textContent = '🎉 Fully Compatible with Tap to Phone!';
+                } else if (totalPositive === 3 || (compatibleCount >= 2 && likelyCount >= 1)) {
+                    overallElement.className = 'overall-result partial';
+                    timelineContainer.className = 'timeline-container partial';
+                    textElement.textContent = '⚠️ Likely Compatible - Some checks inconclusive';
+                } else {
+                    overallElement.className = 'overall-result incompatible';
+                    timelineContainer.className = 'timeline-container failed';
+                    textElement.textContent = '❌ Not Compatible with Tap to Phone';
+                }
+                
+                retryButton.style.display = 'block';
+            }
+
+            showLoading() {
+                document.getElementById('checkButton').disabled = true;
+                document.getElementById('loading').classList.add('show');
+                document.getElementById('results').classList.remove('show');
+            }
+
+            hideLoading() {
+                document.getElementById('checkButton').disabled = false;
+                document.getElementById('loading').classList.remove('show');
+            }
+
+            showResults() {
+                document.getElementById('results').classList.add('show');
+            }
+
+            resetResults() {
+                this.results = { nfc: null, android: null, gms: null };
+                
+                // Reset timeline container
+                const timelineContainer = document.querySelector('.timeline-container');
+                timelineContainer.className = 'timeline-container';
+                
+                // Reset all timeline items to initial state
+                const timelineItems = document.querySelectorAll('.timeline-item');
+                timelineItems.forEach(item => {
+                    const icon = item.querySelector('.timeline-icon');
+                    const content = item.querySelector('.timeline-content');
+                    const description = item.querySelector('.timeline-description');
+                    
+                    // Reset classes
+                    item.className = 'timeline-item';
+                    icon.className = 'timeline-icon pending';
+                    content.className = 'timeline-content';
+                    
+                    // Reset description
+                    description.textContent = 'Checking...';
+                });
+                
+                document.getElementById('retryButton').style.display = 'none';
+            }
+
+            delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+        }
+
+        // Initialize the checker when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new TapToPhoneChecker();
+        });
+
+        // Add some device info to console for debugging
+        console.log('Device Info:', {
+            userAgent: navigator.userAgent,
+            platform: navigator.platform,
+            language: navigator.language,
+            onLine: navigator.onLine,
+            webNFC: 'NDEFReader' in window
+        });
+    </script>
+</body>
+</html> 
