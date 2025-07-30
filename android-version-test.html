@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android Version Checker - Test Page</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #16a34a;
+            color: white;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .content {
+            padding: 24px;
+        }
+
+        .status-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .status-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .status-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .status-icon.pass {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .status-icon.fail {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .status-icon.warning {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .status-icon.unknown {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge.pass {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .badge.fail {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .badge.warning {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .badge.unknown {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .info-grid {
+            display: grid;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .info-item {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .info-label {
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .info-value {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #6b7280;
+            text-align: right;
+            max-width: 60%;
+            word-break: break-all;
+        }
+
+        .alert {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .alert.success {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+        }
+
+        .alert.error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #991b1b;
+        }
+
+        .alert.warning {
+            background: #fffbeb;
+            border: 1px solid #fed7aa;
+            color: #92400e;
+        }
+
+        .alert-icon {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .button {
+            width: 100%;
+            background: #16a34a;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .button:hover {
+            background: #15803d;
+        }
+
+        .button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .technical-details {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .technical-details summary {
+            cursor: pointer;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 12px;
+        }
+
+        .technical-details pre {
+            background: #f9fafb;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .test-cases {
+            margin-top: 24px;
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+
+        .test-case {
+            margin-bottom: 12px;
+            padding: 8px;
+            background: white;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: monospace;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                margin: 0;
+                border-radius: 0;
+            }
+            
+            .info-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            
+            .info-value {
+                max-width: 100%;
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 Android Version Checker</h1>
+            <p>Check if your Android version is 11 or higher</p>
+        </div>
+
+        <div class="content">
+            <div class="status-card">
+                <div class="status-info">
+                    <div class="status-icon unknown" id="statusIcon">?</div>
+                    <div>
+                        <div class="info-label" id="statusText">Checking Android version...</div>
+                        <div style="font-size: 12px; color: #6b7280; margin-top: 4px;" id="statusSubtext">Analyzing User-Agent...</div>
+                    </div>
+                </div>
+                <div class="badge unknown" id="statusBadge">Checking...</div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Minimum Required</span>
+                    <span class="info-value">Android 11+</span>
+                </div>
+                <div class="info-item" id="versionItem" style="display: none;">
+                    <span class="info-label">Your Version</span>
+                    <span class="info-value" id="yourVersion">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Platform</span>
+                    <span class="info-value" id="platform">-</span>
+                </div>
+                <div class="info-item" id="deviceItem" style="display: none;">
+                    <span class="info-label">Device Model</span>
+                    <span class="info-value" id="deviceModel">-</span>
+                </div>
+            </div>
+
+            <div id="alertContainer"></div>
+
+            <button class="button" onclick="checkAndroidVersion()" id="checkButton">
+                🔄 Recheck Version
+            </button>
+
+            <details class="technical-details">
+                <summary>Technical Details</summary>
+                <pre id="technicalInfo">Loading...</pre>
+            </details>
+
+            <div class="test-cases">
+                <h3 style="margin-bottom: 12px; color: #374151;">Test User-Agent Strings</h3>
+                <div class="test-case">✅ Android 12: Mozilla/5.0 (Linux; Android 12; SM-G991B)</div>
+                <div class="test-case">✅ Android 11: Mozilla/5.0 (Linux; Android 11; Pixel 5)</div>
+                <div class="test-case">❌ Android 10: Mozilla/5.0 (Linux; Android 10; SM-G973F)</div>
+                <div class="test-case">⚠️ iOS: Mozilla/5.0 (iPhone; CPU iPhone OS 15_0)</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let androidInfo = null;
+
+        function parseAndroidVersion(userAgent) {
+            const result = {
+                isAndroid: false,
+                version: null,
+                versionNumber: null,
+                isCompatible: false,
+                deviceModel: null,
+                userAgent: userAgent,
+                parseError: null
+            };
+
+            try {
+                // Check if it's an Android device
+                const androidMatch = userAgent.match(/Android/i);
+                if (!androidMatch) {
+                    result.parseError = "Not an Android device";
+                    return result;
+                }
+
+                result.isAndroid = true;
+
+                // Parse Android version - multiple patterns
+                const versionPatterns = [
+                    /Android\s+(\d+(?:\.\d+)*)/i,
+                    /Android\s+(\d+)/i,
+                    /Android[\s/](\d+(?:\.\d+)*)/i
+                ];
+
+                let versionMatch = null;
+                for (const pattern of versionPatterns) {
+                    versionMatch = userAgent.match(pattern);
+                    if (versionMatch) break;
+                }
+
+                if (versionMatch && versionMatch[1]) {
+                    result.version = versionMatch[1];
+                    
+                    const majorVersion = parseInt(versionMatch[1].split('.')[0], 10);
+                    if (!isNaN(majorVersion)) {
+                        result.versionNumber = majorVersion;
+                        result.isCompatible = majorVersion >= 11;
+                    } else {
+                        result.parseError = "Could not parse version number";
+                    }
+                } else {
+                    result.parseError = "Android version not found in User-Agent";
+                }
+
+                // Extract device model
+                const devicePatterns = [
+                    /Android\s+[\d.]+;\s*([^)]+)\)/i,
+                    /;\s*([^;)]+)\s*\)\s*AppleWebKit/i
+                ];
+
+                for (const pattern of devicePatterns) {
+                    const deviceMatch = userAgent.match(pattern);
+                    if (deviceMatch && deviceMatch[1]) {
+                        result.deviceModel = deviceMatch[1].trim();
+                        break;
+                    }
+                }
+            } catch (error) {
+                result.parseError = `Parsing failed: ${error}`;
+            }
+
+            return result;
+        }
+
+        function getPlatformInfo() {
+            const ua = navigator.userAgent;
+            if (/iPhone|iPad|iPod/i.test(ua)) {
+                return { name: "iOS", icon: "📱" };
+            } else if (/Android/i.test(ua)) {
+                return { name: "Android", icon: "🤖" };
+            } else if (/Windows/i.test(ua)) {
+                return { name: "Windows", icon: "💻" };
+            } else if (/Mac/i.test(ua)) {
+                return { name: "macOS", icon: "🖥️" };
+            } else if (/Linux/i.test(ua)) {
+                return { name: "Linux", icon: "🐧" };
+            }
+            return { name: "Unknown", icon: "❓" };
+        }
+
+        function updateUI() {
+            const statusIcon = document.getElementById('statusIcon');
+            const statusText = document.getElementById('statusText');
+            const statusSubtext = document.getElementById('statusSubtext');
+            const statusBadge = document.getElementById('statusBadge');
+            const versionItem = document.getElementById('versionItem');
+            const yourVersion = document.getElementById('yourVersion');
+            const platform = document.getElementById('platform');
+            const deviceItem = document.getElementById('deviceItem');
+            const deviceModel = document.getElementById('deviceModel');
+            const alertContainer = document.getElementById('alertContainer');
+            const technicalInfo = document.getElementById('technicalInfo');
+
+            if (!androidInfo) return;
+
+            // Update platform
+            const platformInfo = getPlatformInfo();
+            platform.textContent = `${platformInfo.icon} ${platformInfo.name}`;
+
+            // Update status
+            statusSubtext.style.display = 'none';
+            
+            if (!androidInfo.isAndroid) {
+                statusIcon.className = 'status-icon warning';
+                statusIcon.textContent = '⚠️';
+                statusText.textContent = 'Not an Android device';
+                statusBadge.className = 'badge warning';
+                statusBadge.textContent = 'Non-Android';
+            } else if (androidInfo.isCompatible) {
+                statusIcon.className = 'status-icon pass';
+                statusIcon.textContent = '✅';
+                statusText.textContent = `Android ${androidInfo.version} - Compatible`;
+                statusBadge.className = 'badge pass';
+                statusBadge.textContent = 'Pass';
+            } else if (androidInfo.versionNumber !== null) {
+                statusIcon.className = 'status-icon fail';
+                statusIcon.textContent = '❌';
+                statusText.textContent = `Android ${androidInfo.version} - Not Compatible`;
+                statusBadge.className = 'badge fail';
+                statusBadge.textContent = 'Fail';
+            } else {
+                statusIcon.className = 'status-icon unknown';
+                statusIcon.textContent = '❓';
+                statusText.textContent = 'Android version unknown';
+                statusBadge.className = 'badge unknown';
+                statusBadge.textContent = 'Unknown';
+            }
+
+            // Show version if available
+            if (androidInfo.version) {
+                versionItem.style.display = 'flex';
+                yourVersion.textContent = `Android ${androidInfo.version}`;
+                yourVersion.className = `info-value ${androidInfo.isCompatible ? 'pass' : 'fail'}`;
+            }
+
+            // Show device model if available
+            if (androidInfo.deviceModel) {
+                deviceItem.style.display = 'flex';
+                deviceModel.textContent = androidInfo.deviceModel;
+            }
+
+            // Update alerts
+            alertContainer.innerHTML = '';
+            
+            if (androidInfo.parseError) {
+                alertContainer.innerHTML += `
+                    <div class="alert warning">
+                        <div class="alert-icon">⚠️</div>
+                        <div>
+                            <strong>Warning:</strong> ${androidInfo.parseError}
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (!androidInfo.isAndroid) {
+                alertContainer.innerHTML += `
+                    <div class="alert warning">
+                        <div class="alert-icon">⚠️</div>
+                        <div>
+                            <strong>Non-Android Device:</strong> This checker is designed for Android devices. Your current platform is ${platformInfo.name}.
+                        </div>
+                    </div>
+                `;
+            } else if (androidInfo.isCompatible) {
+                alertContainer.innerHTML += `
+                    <div class="alert success">
+                        <div class="alert-icon">✅</div>
+                        <div>
+                            <strong>Compatible Version:</strong> Great! Android ${androidInfo.version} meets the minimum requirement of Android 11+.
+                        </div>
+                    </div>
+                `;
+            } else if (androidInfo.versionNumber !== null) {
+                alertContainer.innerHTML += `
+                    <div class="alert error">
+                        <div class="alert-icon">❌</div>
+                        <div>
+                            <strong>Version Not Compatible:</strong> Android ${androidInfo.version} is below the minimum requirement of Android 11. Please update your device if possible.
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Update technical details
+            technicalInfo.textContent = `Is Android: ${androidInfo.isAndroid ? 'Yes' : 'No'}
+Version String: ${androidInfo.version || 'Not detected'}
+Version Number: ${androidInfo.versionNumber || 'Not parsed'}
+Device Model: ${androidInfo.deviceModel || 'Not detected'}
+Parse Error: ${androidInfo.parseError || 'None'}
+
+User Agent:
+${androidInfo.userAgent}
+
+Platform: ${navigator.platform}
+Language: ${navigator.language}
+Cookies Enabled: ${navigator.cookieEnabled}`;
+        }
+
+        function checkAndroidVersion() {
+            const button = document.getElementById('checkButton');
+            button.disabled = true;
+            button.textContent = '🔄 Checking...';
+
+            // Reset UI
+            document.getElementById('statusIcon').className = 'status-icon unknown';
+            document.getElementById('statusIcon').textContent = '?';
+            document.getElementById('statusText').textContent = 'Checking Android version...';
+            document.getElementById('statusSubtext').style.display = 'block';
+            document.getElementById('statusBadge').className = 'badge unknown';
+            document.getElementById('statusBadge').textContent = 'Checking...';
+
+            setTimeout(() => {
+                const userAgent = navigator.userAgent;
+                androidInfo = parseAndroidVersion(userAgent);
+                updateUI();
+                
+                button.disabled = false;
+                button.textContent = '🔄 Recheck Version';
+            }, 500);
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAndroidVersion();
+        });
+    </script>
+</body>
+</html>
