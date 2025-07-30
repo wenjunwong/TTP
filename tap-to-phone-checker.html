@@ -561,31 +561,29 @@
                 const userAgent = navigator.userAgent;
                 
                 if (userAgent.includes('Android')) {
-                    // Enhanced Android version detection with multiple patterns
-                    const version = this.extractAndroidVersion(userAgent);
+                    // Multi-factor Android version detection
+                    const detectionResult = await this.detectAndroidVersionMultiFactor(userAgent);
                     
                     // Log for debugging
-                    console.log('Android version detection:', {
-                        userAgent: userAgent,
-                        extractedVersion: version,
-                        versionNumber: version ? parseFloat(version) : null
-                    });
+                    console.log('Android version detection:', detectionResult);
                     
-                    if (version) {
-                        const versionNumber = parseFloat(version);
-                        const userAgentSnippet = this.getUserAgentSnippet(userAgent);
-                        
-                        if (versionNumber >= 11) {
-                            this.results.android = true;
-                            this.updateTimelineItem(resultElement, 'completed', '✅', 'Android 11+', 
-                                `Android ${version} detected. User Agent: ${userAgentSnippet}`);
-                        } else {
-                            this.results.android = false;
-                            this.updateTimelineItem(resultElement, 'failed', '❌', 'Android Version Too Old', 
-                                `Android ${version} - requires Android 11+. User Agent: ${userAgentSnippet}`);
-                        }
+                    const { finalVersion, confidence, factors } = detectionResult;
+                    const userAgentSnippet = this.getUserAgentSnippet(userAgent);
+                    
+                    if (finalVersion >= 11) {
+                        this.results.android = true;
+                        this.updateTimelineItem(resultElement, 'completed', '✅', 'Android 11+', 
+                            `Android ${finalVersion}+ detected (${confidence} confidence). Factors: ${factors.join(', ')}. User Agent: ${userAgentSnippet}`);
+                    } else if (finalVersion >= 10 && confidence === 'medium') {
+                        // Likely Android 11+ but user agent is frozen
+                        this.results.android = 'likely';
+                        this.updateTimelineItem(resultElement, 'partial', '⚠️', 'Likely Android 11+', 
+                            `Android ${finalVersion} reported, but device likely runs newer version (${confidence} confidence). Factors: ${factors.join(', ')}. User Agent: ${userAgentSnippet}`);
+                    } else if (finalVersion > 0) {
+                        this.results.android = false;
+                        this.updateTimelineItem(resultElement, 'failed', '❌', 'Android Version Too Old', 
+                            `Android ${finalVersion} detected - requires Android 11+. Factors: ${factors.join(', ')}. User Agent: ${userAgentSnippet}`);
                     } else {
-                        const userAgentSnippet = this.getUserAgentSnippet(userAgent);
                         this.results.android = 'unknown';
                         this.updateTimelineItem(resultElement, 'partial', '⚠️', 'Android Version Unknown', 
                             `Could not determine Android version. User Agent: ${userAgentSnippet}`);
@@ -623,6 +621,228 @@
                 }
                 
                 return null;
+            }
+            
+            async detectAndroidVersionMultiFactor(userAgent) {
+                const factors = [];
+                let scores = [];
+                
+                // Factor 1: User Agent String Analysis
+                const userAgentVersion = this.extractAndroidVersion(userAgent);
+                if (userAgentVersion) {
+                    const version = parseFloat(userAgentVersion);
+                    scores.push({ method: 'User Agent', version: version, weight: 1 });
+                    factors.push('User Agent');
+                }
+                
+                // Factor 2: Client Hints API (most reliable when available)
+                try {
+                    if (navigator.userAgentData) {
+                        const highEntropyValues = await navigator.userAgentData.getHighEntropyValues(['platformVersion']);
+                        if (highEntropyValues.platformVersion) {
+                            const version = parseFloat(highEntropyValues.platformVersion);
+                            scores.push({ method: 'Client Hints', version: version, weight: 3 });
+                            factors.push('Client Hints');
+                        }
+                    }
+                } catch (error) {
+                    // Client Hints not available or failed
+                }
+                
+                // Factor 3: Feature Detection for Android 11+ APIs
+                const android11Features = this.detectAndroid11Features();
+                if (android11Features.hasFeatures) {
+                    scores.push({ method: 'Android 11+ Features', version: 11, weight: 2 });
+                    factors.push(`Android 11+ APIs (${android11Features.features.join(', ')})`);
+                }
+                
+                // Factor 4: WebView Version Analysis
+                const webViewVersion = this.analyzeWebViewVersion(userAgent);
+                if (webViewVersion.version > 0) {
+                    scores.push({ method: 'WebView Analysis', version: webViewVersion.version, weight: 1.5 });
+                    factors.push(`WebView v${webViewVersion.chromeVersion}`);
+                }
+                
+                // Factor 5: Modern Browser Features (indicates newer Android)
+                const modernFeatures = this.detectModernBrowserFeatures();
+                if (modernFeatures.hasModernFeatures) {
+                    scores.push({ method: 'Modern Features', version: 11, weight: 1.5 });
+                    factors.push(`Modern Browser (${modernFeatures.features.join(', ')})`);
+                }
+                
+                // Factor 6: Hardware Capabilities (newer hardware usually = newer Android)
+                const hardwareIndicators = this.analyzeHardwareIndicators();
+                if (hardwareIndicators.suggestsNewer) {
+                    scores.push({ method: 'Hardware Indicators', version: 11, weight: 1 });
+                    factors.push(`Modern Hardware (${hardwareIndicators.indicators.join(', ')})`);
+                }
+                
+                // Calculate final version and confidence
+                return this.calculateFinalVersion(scores, factors);
+            }
+            
+            detectAndroid11Features() {
+                const features = [];
+                let hasFeatures = false;
+                
+                // Check for APIs introduced in Android 11+
+                if ('ResizeObserver' in window) {
+                    features.push('ResizeObserver');
+                    hasFeatures = true;
+                }
+                
+                if ('PerformanceObserver' in window && PerformanceObserver.supportedEntryTypes?.includes('navigation')) {
+                    features.push('Navigation Timing');
+                    hasFeatures = true;
+                }
+                
+                if ('IntersectionObserver' in window && IntersectionObserver.prototype.hasOwnProperty('rootMargin')) {
+                    features.push('IntersectionObserver v2');
+                    hasFeatures = true;
+                }
+                
+                if (navigator.deviceMemory && navigator.deviceMemory >= 4) {
+                    features.push('High Memory');
+                    hasFeatures = true;
+                }
+                
+                if ('serviceWorker' in navigator && 'PushManager' in window) {
+                    features.push('Advanced Service Workers');
+                    hasFeatures = true;
+                }
+                
+                return { hasFeatures, features };
+            }
+            
+            analyzeWebViewVersion(userAgent) {
+                const chromeMatch = userAgent.match(/Chrome\/(\d+)\.(\d+)\.(\d+)/);
+                if (chromeMatch) {
+                    const chromeVersion = parseInt(chromeMatch[1]);
+                    let androidVersion = 0;
+                    
+                    // Chrome version to Android mapping (approximate)
+                    if (chromeVersion >= 94) androidVersion = 12; // Chrome 94+ suggests Android 12+
+                    else if (chromeVersion >= 90) androidVersion = 11; // Chrome 90+ suggests Android 11+
+                    else if (chromeVersion >= 83) androidVersion = 10; // Chrome 83+ suggests Android 10+
+                    else if (chromeVersion >= 78) androidVersion = 9;
+                    else androidVersion = 8;
+                    
+                    return { version: androidVersion, chromeVersion: chromeVersion };
+                }
+                return { version: 0, chromeVersion: 0 };
+            }
+            
+            detectModernBrowserFeatures() {
+                const features = [];
+                let hasModernFeatures = false;
+                
+                // Features that typically indicate newer Android versions
+                if ('IntersectionObserver' in window) {
+                    features.push('IntersectionObserver');
+                    hasModernFeatures = true;
+                }
+                
+                if ('ResizeObserver' in window) {
+                    features.push('ResizeObserver');
+                    hasModernFeatures = true;
+                }
+                
+                if (CSS.supports && CSS.supports('display', 'grid')) {
+                    features.push('CSS Grid');
+                    hasModernFeatures = true;
+                }
+                
+                if ('MediaQueryList' in window && MediaQueryList.prototype.hasOwnProperty('addEventListener')) {
+                    features.push('Modern MediaQuery');
+                    hasModernFeatures = true;
+                }
+                
+                if ('PointerEvent' in window) {
+                    features.push('Pointer Events');
+                    hasModernFeatures = true;
+                }
+                
+                return { hasModernFeatures, features };
+            }
+            
+            analyzeHardwareIndicators() {
+                const indicators = [];
+                let suggestsNewer = false;
+                
+                // High-resolution screens (common on newer devices)
+                if (window.devicePixelRatio >= 2.5) {
+                    indicators.push('High DPI Display');
+                    suggestsNewer = true;
+                }
+                
+                // Large screen sizes (modern phones/tablets)
+                if (screen.width >= 1080 || screen.height >= 1920) {
+                    indicators.push('Large Screen');
+                    suggestsNewer = true;
+                }
+                
+                // High memory (4GB+ suggests newer device)
+                if (navigator.deviceMemory && navigator.deviceMemory >= 4) {
+                    indicators.push(`${navigator.deviceMemory}GB RAM`);
+                    suggestsNewer = true;
+                }
+                
+                // Hardware concurrency (multi-core processors)
+                if (navigator.hardwareConcurrency >= 6) {
+                    indicators.push(`${navigator.hardwareConcurrency}-core CPU`);
+                    suggestsNewer = true;
+                }
+                
+                return { suggestsNewer, indicators };
+            }
+            
+            calculateFinalVersion(scores, factors) {
+                if (scores.length === 0) {
+                    return { finalVersion: 0, confidence: 'low', factors: ['No detection methods succeeded'] };
+                }
+                
+                // Calculate weighted average
+                let totalWeight = 0;
+                let weightedSum = 0;
+                
+                scores.forEach(score => {
+                    totalWeight += score.weight;
+                    weightedSum += score.version * score.weight;
+                });
+                
+                const weightedAverage = weightedSum / totalWeight;
+                
+                // Determine confidence based on number of factors and agreement
+                let confidence = 'low';
+                const highValueScores = scores.filter(s => s.version >= 11);
+                const clientHintsScore = scores.find(s => s.method === 'Client Hints');
+                
+                if (clientHintsScore && clientHintsScore.version >= 11) {
+                    confidence = 'high'; // Client Hints is most reliable
+                } else if (highValueScores.length >= 3) {
+                    confidence = 'high'; // Multiple factors agree on Android 11+
+                } else if (highValueScores.length >= 2) {
+                    confidence = 'medium'; // Some evidence for Android 11+
+                } else if (scores.length >= 3) {
+                    confidence = 'medium'; // Multiple detection methods used
+                }
+                
+                // Special case: if user agent shows 10 but we have evidence of 11+
+                const userAgentScore = scores.find(s => s.method === 'User Agent');
+                if (userAgentScore && userAgentScore.version === 10 && highValueScores.length >= 2) {
+                    return { 
+                        finalVersion: 10, 
+                        confidence: 'medium', 
+                        factors: factors,
+                        note: 'User agent frozen, but device likely runs Android 11+'
+                    };
+                }
+                
+                return { 
+                    finalVersion: Math.round(weightedAverage), 
+                    confidence: confidence, 
+                    factors: factors 
+                };
             }
             
             getUserAgentSnippet(userAgent) {
