@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merchant Recommendation Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .terminal-container {
+            width: 375px;
+            height: 812px;
+            background: white;
+            border-radius: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .time {
+            color: #000;
+        }
+
+        .signal-battery {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: #000;
+        }
+
+        .close-button {
+            position: absolute;
+            top: 50px;
+            left: 20px;
+            width: 30px;
+            height: 30px;
+            border: none;
+            background: none;
+            font-size: 18px;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 80px 40px 40px;
+            text-align: center;
+            height: calc(100% - 60px);
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #00C851;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .success-icon::before {
+            content: '';
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            border: 2px dashed #00C851;
+            border-radius: 50%;
+            opacity: 0.3;
+        }
+
+        .checkmark {
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .status-text {
+            font-size: 24px;
+            font-weight: 600;
+            color: #000;
+            margin-bottom: 8px;
+        }
+
+        .amount {
+            font-size: 24px;
+            font-weight: 600;
+            color: #000;
+            margin-bottom: 40px;
+        }
+
+        .customer-status {
+            background: #fff3e0;
+            border: 1px solid #ff9800;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            width: 100%;
+            position: relative;
+        }
+
+        .status-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #ff9800;
+            margin-bottom: 8px;
+        }
+
+        .status-text {
+            font-size: 14px;
+            color: #333;
+            line-height: 1.4;
+        }
+
+        .merchant-alert {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 28px;
+            height: 28px;
+            background: #ffc107;
+            border: 2px solid white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            animation: pulse 2s infinite;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .lightbulb {
+            font-size: 16px;
+            color: #333;
+        }
+
+        /* Section Management */
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        /* Section 2 specific - overlay behavior */
+        #section2 {
+            display: none;
+        }
+
+        #section2.active {
+            display: flex;
+        }
+
+        /* Section 2 - Recommendation Overlay */
+        .recommendation-section {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            padding: 0;
+        }
+
+        .recommendation-overlay {
+            background: white;
+            width: 100%;
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2);
+            max-height: 70%;
+            overflow-y: auto;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        .overlay-header {
+            padding: 20px 20px 0 20px;
+            text-align: center;
+            border-bottom: 1px solid #f0f0f0;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        .overlay-handle {
+            width: 40px;
+            height: 4px;
+            background: #ddd;
+            border-radius: 2px;
+            margin: 0 auto 15px;
+        }
+
+        .overlay-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .overlay-subtitle {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .overlay-content {
+            padding: 0 20px 20px 20px;
+        }
+
+        .customer-insights {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .insights-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .insight-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .insight-label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .insight-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .recommendation-card {
+            background: linear-gradient(135deg, #e8f5e8, #f0fff0);
+            border: 1px solid #00C851;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 20px;
+        }
+
+        .rec-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .rec-icon {
+            font-size: 20px;
+        }
+
+        .rec-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #00C851;
+        }
+
+        .rec-description {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .rec-rationale {
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 12px;
+            color: #555;
+            line-height: 1.4;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            padding-top: 10px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-send {
+            background: #00C851;
+            color: white;
+        }
+
+        .btn-send:hover {
+            background: #00a844;
+        }
+
+        .btn-skip {
+            background: #f8f9fa;
+            color: #666;
+            border: 1px solid #ddd;
+            position: relative;
+        }
+
+        .btn-skip:hover {
+            background: #e9ecef;
+        }
+
+        .countdown-timer {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ff6b6b;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .default-toggle {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .toggle-container input[type="checkbox"] {
+            display: none;
+        }
+
+        .toggle-slider {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: #ddd;
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        .toggle-slider::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-container input:checked + .toggle-slider {
+            background: #00C851;
+        }
+
+        .toggle-container input:checked + .toggle-slider::before {
+            transform: translateX(20px);
+        }
+
+        .toggle-text {
+            user-select: none;
+        }
+
+        /* Section 3 - Print Receipt */
+        .receipt-section {
+            display: none;
+            padding: 20px;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .receipt-section.active {
+            display: block;
+        }
+
+        .receipt-paper {
+            background: white;
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .receipt-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .receipt-logo {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .receipt-restaurant {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .receipt-date {
+            margin-bottom: 3px;
+        }
+
+        .receipt-divider {
+            border-top: 1px dashed #333;
+            margin: 15px 0;
+        }
+
+        .receipt-line {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 3px;
+        }
+
+        .receipt-section-title {
+            text-align: center;
+            font-weight: bold;
+            margin: 15px 0 10px;
+            text-decoration: underline;
+        }
+
+        .signature-area {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .signature-line {
+            border-bottom: 1px solid #333;
+            width: 150px;
+            height: 40px;
+            margin: 10px auto;
+            position: relative;
+        }
+
+        .signature-text {
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+        }
+
+        .receipt-footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 10px;
+        }
+
+        .voucher-section {
+            margin-top: 30px;
+            border: 2px dashed #ff9800;
+            padding: 15px;
+            background: #fff8f0;
+            text-align: center;
+        }
+
+        .voucher-title {
+            font-weight: bold;
+            font-size: 14px;
+            color: #ff9800;
+            margin-bottom: 8px;
+        }
+
+        .voucher-text {
+            font-size: 11px;
+            margin-bottom: 8px;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 50px;
+            left: 20px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .receipt-question {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .receipt-buttons {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .receipt-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 2px solid #e0e0e0;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .receipt-btn:hover {
+            border-color: #00C851;
+            background: #f8fff8;
+        }
+
+        .receipt-btn span {
+            font-size: 24px;
+        }
+
+        .next-payment-btn {
+            background: #00C851;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 16px 40px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: auto;
+        }
+
+        .next-payment-btn:hover {
+            background: #00a844;
+        }
+
+        /* Pop-up Overlay */
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .popup-overlay.active {
+            display: flex;
+        }
+
+        .popup-content {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            width: 320px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .popup-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .popup-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+
+        .popup-subtitle {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .customer-info {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .info-label {
+            color: #666;
+        }
+
+        .info-value {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .offer-section {
+            background: #e8f5e8;
+            border: 1px solid #00C851;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .offer-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #00C851;
+            margin-bottom: 8px;
+        }
+
+        .offer-description {
+            font-size: 13px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .rationale {
+            font-size: 11px;
+            color: #666;
+            background: #f1f3f4;
+            padding: 8px;
+            border-radius: 6px;
+            text-align: left;
+        }
+
+        .popup-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .popup-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .popup-btn-primary {
+            background: #00C851;
+            color: white;
+        }
+
+        .popup-btn-primary:hover {
+            background: #00a844;
+        }
+
+        .popup-btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .popup-btn-secondary:hover {
+            background: #545b62;
+        }
+
+        .default-option {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .checkbox-container input[type="checkbox"] {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="terminal-container">
+        <div class="status-bar">
+            <div class="time">9:41</div>
+            <div class="signal-battery">📶 🔋</div>
+        </div>
+        
+        <!-- Section 1: Payment Confirmation -->
+        <div id="section1" class="section active content">
+            <button class="close-button">✕</button>
+            
+            <div class="success-icon">
+                <div class="checkmark">✓</div>
+            </div>
+            
+            <div class="status-text">Approved!</div>
+            <div class="amount">₱323.00</div>
+            
+            <div class="customer-status">
+                <div class="merchant-alert" onclick="showSection2()">
+                    <div class="lightbulb">💡</div>
+                </div>
+                <div class="status-title">Thank you, valued customer!</div>
+                <div class="status-text">Your loyalty means everything to us</div>
+            </div>
+            
+            <div class="receipt-question">Need receipt?</div>
+            
+            <div class="receipt-buttons">
+                <button class="receipt-btn" title="Print Receipt">
+                    <span>🖨️</span>
+                </button>
+                <button class="receipt-btn" title="Share Receipt">
+                    <span>📤</span>
+                </button>
+            </div>
+            
+            <button class="next-payment-btn">Next Payment</button>
+        </div>
+
+        <!-- Section 2: Recommendation Overlay -->
+        <div id="section2" class="recommendation-section">
+            <div class="recommendation-overlay">
+                <div class="overlay-header">
+                    <div class="overlay-handle"></div>
+                    <div class="overlay-title">Reward Loyal Customers</div>
+                    <div class="overlay-subtitle">Regular Customer - 5th Visit</div>
+                </div>
+                
+                <div class="overlay-content">
+                    <div class="customer-insights">
+                        <div class="insights-grid">
+                            <div class="insight-item">
+                                <span class="insight-label">Last Visit</span>
+                                <span class="insight-value">12 days ago</span>
+                            </div>
+                            <div class="insight-item">
+                                <span class="insight-label">Average Spend</span>
+                                <span class="insight-value">₱285</span>
+                            </div>
+                            <div class="insight-item">
+                                <span class="insight-label">Current Order</span>
+                                <span class="insight-value">₱323 (+13%)</span>
+                            </div>
+                            <div class="insight-item">
+                                <span class="insight-label">Loyalty Status</span>
+                                <span class="insight-value">Regular Customer</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="recommendation-card">
+                        <div class="rec-header">
+                            <span class="rec-icon">🍰</span>
+                            <span class="rec-title">Recommended Action</span>
+                        </div>
+                        <div class="rec-description">
+                            Offer free dessert on next visit to show appreciation for their loyalty
+                        </div>
+                        <div class="rec-rationale">
+                            Did you know that your top 10% loyal customers make up 43% of revenue and spend 25% more on average?
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="action-btn btn-send" onclick="sendOffer()">
+                            Provide Offer
+                        </button>
+                        <button class="action-btn btn-skip" onclick="skipOffer()" id="skipButton">
+                            <span class="countdown-timer" id="countdownTimer">10</span>
+                            Skip
+                        </button>
+                    </div>
+
+                    <div class="default-toggle">
+                        <label class="toggle-container">
+                            <input type="checkbox" id="defaultToggle">
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-text">Set selection as default</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Print Receipt -->
+        <div id="section3" class="section receipt-section">
+            <button class="back-btn" onclick="showSection1()">← Back</button>
+            
+            <div class="receipt-paper">
+                <div class="receipt-header">
+                    <div class="receipt-logo">Grab</div>
+                    <div class="receipt-restaurant">Mama's Kitchen</div>
+                    <div class="receipt-date">December #31 22</div>
+                    <div>Food Sparta</div>
+                </div>
+
+                <div class="receipt-divider"></div>
+
+                <div class="receipt-line">
+                    <span>06Dec2024 - 11:46:12</span>
+                </div>
+                <div style="margin: 10px 0;">
+                    <div class="receipt-line">
+                        <span>MID:1234567890123456</span>
+                        <span>TM: 123456</span>
+                    </div>
+                    <div class="receipt-line">
+                        <span>AID:1234567890123456</span>
+                        <span>TID:12345678</span>
+                    </div>
+                </div>
+
+                <div class="receipt-section-title">SALE</div>
+
+                <div class="receipt-line">
+                    <span>Approval: 123456</span>
+                </div>
+                <div class="receipt-line">
+                    <span>Ref:1234567890123</span>
+                </div>
+                <div style="margin: 10px 0;">
+                    <div class="receipt-line">
+                        <span>Mastercard - Credit</span>
+                    </div>
+                    <div class="receipt-line">
+                        <span>**** **** **** 1234 (**/*/17)</span>
+                    </div>
+                </div>
+
+                <div class="receipt-line" style="font-weight: bold; margin-top: 15px;">
+                    <span>Total</span>
+                    <span>₱323.00</span>
+                </div>
+
+                <div class="signature-area">
+                    <div class="signature-line">
+                        <div class="signature-text">Sign</div>
+                    </div>
+                </div>
+
+                <div class="receipt-footer">
+                    <div>Need Refund?</div>
+                    <div>Available within 24 hours</div>
+                    <div style="margin-top: 10px;">
+                        <div>Transaction ID:</div>
+                        <div>1234567890123456789012345678901234567890123</div>
+                    </div>
+                </div>
+
+                <div class="voucher-section">
+                    <div class="voucher-title">🍰 SURPRISE TREAT 🍰</div>
+                    <div class="voucher-text">You've earned something sweet!</div>
+                    <div class="voucher-text">FREE DESSERT on your next visit</div>
+                    <div class="qr-code">
+                        <svg width="100" height="100" viewBox="0 0 25 25" style="margin: 10px auto; display: block; border: 1px solid #ddd;">
+                            <rect width="25" height="25" fill="white"/>
+                            <g fill="black">
+                                <!-- Top-left finder pattern -->
+                                <rect x="0" y="0" width="7" height="7"/>
+                                <rect x="1" y="1" width="5" height="5" fill="white"/>
+                                <rect x="2" y="2" width="3" height="3"/>
+                                
+                                <!-- Top-right finder pattern -->
+                                <rect x="18" y="0" width="7" height="7"/>
+                                <rect x="19" y="1" width="5" height="5" fill="white"/>
+                                <rect x="20" y="2" width="3" height="3"/>
+                                
+                                <!-- Bottom-left finder pattern -->
+                                <rect x="0" y="18" width="7" height="7"/>
+                                <rect x="1" y="19" width="5" height="5" fill="white"/>
+                                <rect x="2" y="20" width="3" height="3"/>
+                                
+                                <!-- Timing patterns -->
+                                <rect x="8" y="6" width="1" height="1"/>
+                                <rect x="10" y="6" width="1" height="1"/>
+                                <rect x="12" y="6" width="1" height="1"/>
+                                <rect x="14" y="6" width="1" height="1"/>
+                                <rect x="16" y="6" width="1" height="1"/>
+                                
+                                <rect x="6" y="8" width="1" height="1"/>
+                                <rect x="6" y="10" width="1" height="1"/>
+                                <rect x="6" y="12" width="1" height="1"/>
+                                <rect x="6" y="14" width="1" height="1"/>
+                                <rect x="6" y="16" width="1" height="1"/>
+                                
+                                <!-- Data modules (different pattern for loyalty) -->
+                                <rect x="8" y="8" width="1" height="1"/>
+                                <rect x="10" y="8" width="1" height="1"/>
+                                <rect x="12" y="8" width="1" height="1"/>
+                                <rect x="14" y="8" width="1" height="1"/>
+                                <rect x="16" y="8" width="1" height="1"/>
+                                
+                                <rect x="9" y="9" width="1" height="1"/>
+                                <rect x="11" y="9" width="1" height="1"/>
+                                <rect x="13" y="9" width="1" height="1"/>
+                                <rect x="15" y="9" width="1" height="1"/>
+                                
+                                <rect x="8" y="10" width="1" height="1"/>
+                                <rect x="10" y="10" width="1" height="1"/>
+                                <rect x="12" y="10" width="1" height="1"/>
+                                <rect x="14" y="10" width="1" height="1"/>
+                                <rect x="16" y="10" width="1" height="1"/>
+                                
+                                <rect x="9" y="11" width="1" height="1"/>
+                                <rect x="11" y="11" width="1" height="1"/>
+                                <rect x="13" y="11" width="1" height="1"/>
+                                <rect x="15" y="11" width="1" height="1"/>
+                                
+                                <rect x="8" y="12" width="1" height="1"/>
+                                <rect x="10" y="12" width="1" height="1"/>
+                                <rect x="12" y="12" width="1" height="1"/>
+                                <rect x="14" y="12" width="1" height="1"/>
+                                <rect x="16" y="12" width="1" height="1"/>
+                                
+                                <rect x="9" y="13" width="1" height="1"/>
+                                <rect x="11" y="13" width="1" height="1"/>
+                                <rect x="13" y="13" width="1" height="1"/>
+                                <rect x="15" y="13" width="1" height="1"/>
+                                
+                                <rect x="8" y="14" width="1" height="1"/>
+                                <rect x="10" y="14" width="1" height="1"/>
+                                <rect x="12" y="14" width="1" height="1"/>
+                                <rect x="14" y="14" width="1" height="1"/>
+                                <rect x="16" y="14" width="1" height="1"/>
+                                
+                                <rect x="9" y="15" width="1" height="1"/>
+                                <rect x="11" y="15" width="1" height="1"/>
+                                <rect x="13" y="15" width="1" height="1"/>
+                                <rect x="15" y="15" width="1" height="1"/>
+                                
+                                <rect x="8" y="16" width="1" height="1"/>
+                                <rect x="10" y="16" width="1" height="1"/>
+                                <rect x="12" y="16" width="1" height="1"/>
+                                <rect x="14" y="16" width="1" height="1"/>
+                                <rect x="16" y="16" width="1" height="1"/>
+                                
+                                <!-- Bottom section data -->
+                                <rect x="8" y="18" width="1" height="1"/>
+                                <rect x="10" y="18" width="1" height="1"/>
+                                <rect x="12" y="18" width="1" height="1"/>
+                                <rect x="14" y="18" width="1" height="1"/>
+                                <rect x="16" y="18" width="1" height="1"/>
+                                
+                                <rect x="9" y="19" width="1" height="1"/>
+                                <rect x="11" y="19" width="1" height="1"/>
+                                <rect x="13" y="19" width="1" height="1"/>
+                                <rect x="15" y="19" width="1" height="1"/>
+                                
+                                <rect x="8" y="20" width="1" height="1"/>
+                                <rect x="10" y="20" width="1" height="1"/>
+                                <rect x="12" y="20" width="1" height="1"/>
+                                <rect x="14" y="20" width="1" height="1"/>
+                                <rect x="16" y="20" width="1" height="1"/>
+                                
+                                <rect x="9" y="21" width="1" height="1"/>
+                                <rect x="11" y="21" width="1" height="1"/>
+                                <rect x="13" y="21" width="1" height="1"/>
+                                <rect x="15" y="21" width="1" height="1"/>
+                                
+                                <rect x="8" y="22" width="1" height="1"/>
+                                <rect x="10" y="22" width="1" height="1"/>
+                                <rect x="12" y="22" width="1" height="1"/>
+                                <rect x="14" y="22" width="1" height="1"/>
+                                <rect x="16" y="22" width="1" height="1"/>
+                                
+                                <rect x="9" y="23" width="1" height="1"/>
+                                <rect x="11" y="23" width="1" height="1"/>
+                                <rect x="13" y="23" width="1" height="1"/>
+                                <rect x="15" y="23" width="1" height="1"/>
+                                
+                                <rect x="8" y="24" width="1" height="1"/>
+                                <rect x="10" y="24" width="1" height="1"/>
+                                <rect x="12" y="24" width="1" height="1"/>
+                                <rect x="14" y="24" width="1" height="1"/>
+                                <rect x="16" y="24" width="1" height="1"/>
+                                
+                                <!-- Right section data -->
+                                <rect x="18" y="8" width="1" height="1"/>
+                                <rect x="20" y="8" width="1" height="1"/>
+                                <rect x="22" y="8" width="1" height="1"/>
+                                <rect x="24" y="8" width="1" height="1"/>
+                                
+                                <rect x="19" y="9" width="1" height="1"/>
+                                <rect x="21" y="9" width="1" height="1"/>
+                                <rect x="23" y="9" width="1" height="1"/>
+                                
+                                <rect x="18" y="10" width="1" height="1"/>
+                                <rect x="20" y="10" width="1" height="1"/>
+                                <rect x="22" y="10" width="1" height="1"/>
+                                <rect x="24" y="10" width="1" height="1"/>
+                                
+                                <rect x="19" y="11" width="1" height="1"/>
+                                <rect x="21" y="11" width="1" height="1"/>
+                                <rect x="23" y="11" width="1" height="1"/>
+                                
+                                <rect x="18" y="12" width="1" height="1"/>
+                                <rect x="20" y="12" width="1" height="1"/>
+                                <rect x="22" y="12" width="1" height="1"/>
+                                <rect x="24" y="12" width="1" height="1"/>
+                                
+                                <rect x="19" y="13" width="1" height="1"/>
+                                <rect x="21" y="13" width="1" height="1"/>
+                                <rect x="23" y="13" width="1" height="1"/>
+                                
+                                <rect x="18" y="14" width="1" height="1"/>
+                                <rect x="20" y="14" width="1" height="1"/>
+                                <rect x="22" y="14" width="1" height="1"/>
+                                <rect x="24" y="14" width="1" height="1"/>
+                                
+                                <rect x="19" y="15" width="1" height="1"/>
+                                <rect x="21" y="15" width="1" height="1"/>
+                                <rect x="23" y="15" width="1" height="1"/>
+                                
+                                <rect x="18" y="16" width="1" height="1"/>
+                                <rect x="20" y="16" width="1" height="1"/>
+                                <rect x="22" y="16" width="1" height="1"/>
+                                <rect x="24" y="16" width="1" height="1"/>
+                                
+                                <rect x="18" y="18" width="1" height="1"/>
+                                <rect x="20" y="18" width="1" height="1"/>
+                                <rect x="22" y="18" width="1" height="1"/>
+                                <rect x="24" y="18" width="1" height="1"/>
+                                
+                                <rect x="19" y="19" width="1" height="1"/>
+                                <rect x="21" y="19" width="1" height="1"/>
+                                <rect x="23" y="19" width="1" height="1"/>
+                                
+                                <rect x="18" y="20" width="1" height="1"/>
+                                <rect x="20" y="20" width="1" height="1"/>
+                                <rect x="22" y="20" width="1" height="1"/>
+                                <rect x="24" y="20" width="1" height="1"/>
+                                
+                                <rect x="19" y="21" width="1" height="1"/>
+                                <rect x="21" y="21" width="1" height="1"/>
+                                <rect x="23" y="21" width="1" height="1"/>
+                                
+                                <rect x="18" y="22" width="1" height="1"/>
+                                <rect x="20" y="22" width="1" height="1"/>
+                                <rect x="22" y="22" width="1" height="1"/>
+                                <rect x="24" y="22" width="1" height="1"/>
+                                
+                                <rect x="19" y="23" width="1" height="1"/>
+                                <rect x="21" y="23" width="1" height="1"/>
+                                <rect x="23" y="23" width="1" height="1"/>
+                                
+                                <rect x="18" y="24" width="1" height="1"/>
+                                <rect x="20" y="24" width="1" height="1"/>
+                                <rect x="22" y="24" width="1" height="1"/>
+                                <rect x="24" y="24" width="1" height="1"/>
+                            </g>
+                        </svg>
+                    </div>
+                    <div class="voucher-text" style="font-size: 10px; margin-top: 5px;">Scan now to claim your sweet surprise</div>
+                    <div style="font-size: 9px; margin-top: 8px;">
+                        Valid for 30 days | Choose any dessert from our menu
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 20px; font-size: 10px;">
+                    I agree to pay the above total amount<br>
+                    according to the card issuer<br>
+                    agreement.
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script>
+        let countdownTimer = null;
+        let timeLeft = 10;
+
+        function showSection1() {
+            clearCountdown();
+            hideAllSections();
+            document.getElementById('section1').classList.add('active');
+            // Make sure overlay is hidden
+            document.getElementById('section2').classList.remove('active');
+        }
+
+        function showSection2() {
+            // Section 2 is an overlay, so don't hide Section 1
+            document.getElementById('section2').classList.add('active');
+            startCountdown();
+        }
+
+        function hideSection2() {
+            clearCountdown();
+            document.getElementById('section2').classList.remove('active');
+        }
+
+        function showSection3() {
+            clearCountdown();
+            // Hide overlay first, then show Section 3
+            hideSection2();
+            hideAllSections();
+            document.getElementById('section3').classList.add('active');
+        }
+
+        function hideAllSections() {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+        }
+
+        function startCountdown() {
+            timeLeft = 10;
+            updateCountdownDisplay();
+            
+            countdownTimer = setInterval(() => {
+                timeLeft--;
+                updateCountdownDisplay();
+                
+                if (timeLeft <= 0) {
+                    skipOffer();
+                }
+            }, 1000);
+        }
+
+        function clearCountdown() {
+            if (countdownTimer) {
+                clearInterval(countdownTimer);
+                countdownTimer = null;
+            }
+            timeLeft = 10;
+        }
+
+        function updateCountdownDisplay() {
+            const timerElement = document.getElementById('countdownTimer');
+            if (timerElement) {
+                timerElement.textContent = timeLeft;
+            }
+        }
+
+        function sendOffer() {
+            const defaultToggle = document.getElementById('defaultToggle');
+            if (defaultToggle.checked) {
+                // In real implementation, this would save the default preference
+                console.log('Default preference saved: Provide free dessert offer for loyal customers');
+            }
+            clearCountdown();
+            showSection3();
+        }
+
+        function skipOffer() {
+            clearCountdown();
+            hideSection2();
+        }
+    </script>
+</body>
+</html> 
